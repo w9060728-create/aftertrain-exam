@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiagBox 初階教育訓練 - 課後測驗與問卷</title>
+<style>
+  :root{
+    --navy:#13294B; --navy2:#1F3A63; --maroon:#8C1D40; --gold:#C9932F;
+    --bg:#F3F5F9; --card:#FFFFFF; --line:#E3E7EE; --txt:#1B1F27; --muted:#667085;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:"Segoe UI","微軟正黑體",sans-serif; background:var(--bg); color:var(--txt);}
+  .wrap{max-width:860px; margin:0 auto; padding:28px 18px 90px;}
+  header{background:var(--navy); color:#fff; padding:28px 22px; border-radius:14px; margin-bottom:22px;}
+  header h1{margin:0 0 6px; font-size:24px;}
+  header p{margin:0; color:#B9C6E0; font-size:14px;}
+  .meta-box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:22px; display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .meta-box label{display:block; font-size:13px; font-weight:700; color:var(--navy); margin-bottom:6px;}
+  .meta-box input{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:15px;}
+  .section-title{background:var(--maroon); color:#fff; padding:10px 16px; border-radius:10px; font-size:16px; font-weight:700; margin:30px 0 14px;}
+  .cat-title{color:var(--navy); font-size:14.5px; font-weight:700; margin:20px 0 10px; padding-bottom:6px; border-bottom:2px solid var(--line);}
+  .q-card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:12px;}
+  .q-title{font-weight:700; font-size:14.5px; margin-bottom:9px; line-height:1.5;}
+  .q-title .qno{color:var(--maroon); margin-right:4px;}
+  .opt{display:block; padding:9px 12px; margin-bottom:7px; border:1.5px solid var(--line); border-radius:8px; cursor:pointer; font-size:14px; transition:.15s;}
+  .opt:hover{border-color:var(--navy2); background:#F7F9FC;}
+  .opt.selected{border-color:var(--navy); background:#EAF0FA; color:var(--navy); font-weight:700;}
+  .opt input{margin-right:8px;}
+
+  .likert-card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin-bottom:10px;}
+  .likert-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+  .likert-label{font-size:14px; font-weight:600; flex:1 1 260px;}
+  .likert-scale{display:flex; gap:6px;}
+  .likert-scale button{width:36px; height:36px; border-radius:50%; border:1.5px solid var(--line); background:#fff; cursor:pointer; font-weight:700; color:var(--muted);}
+  .likert-scale button.selected{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .likert-hint{font-size:11px; color:var(--muted); margin-top:4px;}
+  .confidence-cols{display:flex; gap:18px; margin-top:8px; flex-wrap:wrap;}
+  .confidence-col{flex:1 1 260px;}
+  .confidence-col .tag{font-size:11px; font-weight:700; color:var(--maroon); margin-bottom:4px;}
+
+  textarea{width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; resize:vertical;}
+
+  .submit-bar{position:sticky; bottom:0; background:linear-gradient(to top, var(--bg) 60%, transparent); padding:18px 0 4px;}
+  #submitBtn{width:100%; padding:16px; font-size:17px; font-weight:700; color:#fff; background:linear-gradient(135deg, var(--navy), var(--navy2)); border:none; border-radius:12px; cursor:pointer;}
+  .progress{font-size:13px; color:var(--muted); text-align:center; margin-bottom:8px;}
+  #resultScreen{display:none; text-align:center; padding:60px 20px;}
+  #resultScreen h2{color:var(--navy);}
+  .warn{color:var(--maroon); font-size:13px; text-align:center; margin-top:6px; display:none;}
+</style>
+</head>
+<body>
+<div class="wrap" id="quizScreen">
+  <header>
+    <h1>DiagBox 初階教育訓練 — 課後測驗與問卷</h1>
+    <p>請一次完成測驗（35題）與問卷，作答完成後看不到分數屬正常設計，資料將用於課程學習成效分析。</p>
+  </header>
+
+  <div class="meta-box">
+    <div><label>分店</label><input id="dealer" placeholder="例如：星聯板橋"></div>
+    <div><label>姓名</label><input id="name" placeholder="請輸入本名"></div>
+  </div>
+
+  <div class="section-title">Part 1｜課後測驗（共 35 題）</div>
+  <div id="qContainer"></div>
+
+  <div class="section-title">Part 2｜課程滿意度</div>
+  <div id="satContainer"></div>
+
+  <div class="section-title">Part 3｜各模組操作信心自評（課前 vs 課後）</div>
+  <div id="confContainer"></div>
+
+  <div class="section-title">Part 4｜開放式意見</div>
+  <div class="q-card">
+    <div class="q-title">1. 本次課程中，你覺得最有幫助的部分是？</div>
+    <textarea id="open1"></textarea>
+  </div>
+  <div class="q-card">
+    <div class="q-title">2. 你覺得還需要加強或不清楚的地方是？</div>
+    <textarea id="open2"></textarea>
+  </div>
+  <div class="q-card">
+    <div class="q-title">3. 其他建議：</div>
+    <textarea id="open3"></textarea>
+  </div>
+
+  <div class="submit-bar">
+    <div class="progress" id="progressText">測驗已作答 0 / 35 題</div>
+    <button id="submitBtn" onclick="submitAll()">提交課後測驗與問卷</button>
+    <div class="warn" id="warnMsg">請完整填寫分店、姓名，並回答所有測驗題目與滿意度題目後再提交。</div>
+  </div>
+</div>
+
+<div id="resultScreen">
+  <h2>✅ 已送出，感謝作答</h2>
+  <p>您的測驗與問卷已送出，資料將用於課程學習成效分析，您可以關閉此頁面。</p>
+</div>
+
+<script>
+/* =========================================================
+   ⚠️ 上線前請完成以下設定 ⚠️
+   1. 建立 Google 表單「DiagBox課後測驗與問卷回覆」，欄位：
+      分店 / 姓名 / 測驗得分 / 測驗作答明細 / 滿意度與信心自評明細 /
+      最有幫助的部分 / 待加強的部分 / 其他建議
+   2. 用「取得預先填寫的連結」功能，取得每個欄位對應的 entry.xxxxxx 數字
+   3. 將下方 FORM_URL 換成你表單的 formResponse 網址
+   4. 將 ENTRY 物件裡的數字換成你實際的 entry ID
+========================================================= */
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfMm7Ax1hPMuoDXXEX1-ZoQXjtb3gFUsQKIT2SRYLovtCdqfg/formResponse";
+const ENTRY = {
+  dealer:   "entry.1787627730",  // 分店
+  name:     "entry.1685927756",  // 姓名
+  score:    "entry.135800857",   // 測驗得分
+  qlog:     "entry.1994547623",  // 測驗作答明細
+  survey:   "entry.1233998431",  // 滿意度與信心自評明細
+  open1:    "entry.1703715444",  // 最有幫助的部分
+  open2:    "entry.2117919000",  // 待加強的部分
+  open3:    "entry.916067709",   // 其他建議
+};
+
+const categories = [
+  { name: "一、DiagBox 基本功能與介面", items: [
+    { q: "DiagBox 三大核心功能中，「即時監控」主要包含哪些操作？", o: ["讀取運作數據、執行促動器強制測試", "讀取／清除故障碼", "ECU 軟體下載", "零件編程與防盜匹配"], a: 0 },
+    { q: "畫面上顯示的「連線狀況」圖示，主要用來確認什麼？", o: ["操作員登入狀態", "與車輛的連接方式（藍牙或有線）等連線資訊", "電池電壓數值", "保養里程數"], a: 1 },
+    { q: "畫面右上角常駐顯示的資訊，下列何者「不包含」？", o: ["車輛電壓", "診斷系統版本", "有無登錄", "維修單編號"], a: 3 },
+    { q: "如果要更改 DiagBox 軟體介面顯示語言，操作邏輯上屬於？", o: ["系統設定內的語言選項", "需要重新安裝軟體", "無法更改，僅支援單一語言", "需要聯絡原廠人員遠端更改，門市無法自行調整"], a: 0 },
+  ]},
+  { name: "二、VCI 異常處理", items: [
+    { q: "VCI 亮紅燈時，第一步建議如何排查？", o: ["直接更換 VCI", "點選桌面連結至 PSA Interface 查看狀態", "重新安裝作業系統", "重新啟動電腦即可自動排除"], a: 1 },
+    { q: "點選「Reports」功能，主要可以看到什麼資訊？", o: ["客戶保養歷史", "該台 VCI 系統及錯誤報告", "保養複位歷史紀錄", "軟體版本更新歷程"], a: 1 },
+    { q: "為什麼需要及時消除 VCI 異常指示燈？", o: ["避免占用過多網路頻寬", "可能導致配置過程中發生不可預期的故障", "避免影響電池電壓判讀", "純粹是介面顯示問題，不影響操作"], a: 1 },
+  ]},
+  { name: "三、新車交付流程", items: [
+    { q: "新車交付(Customer delivery) 流程中，下列何者「不屬於」其涵蓋項目？", o: ["選裝設備設定", "限定車速", "電池品質鑑定", "遠端召回活動下載"], a: 3 },
+    { q: "「限定車速」設定完成後，下列敘述何者正確？", o: ["客戶可透過中控台自行調整", "客戶無法自行更改，需回廠由 DiagBox 調整", "系統每次熄火會自動解除限制", "僅適用於展示車"], a: 1 },
+    { q: "電池品質鑑定（依 BECB 資料）建議在交車前多久內完成？", o: ["24 小時內", "48 小時內", "一週內", "一個月內"], a: 1 },
+    { q: "電池品質鑑定報告的處理方式是？", o: ["僅供內部參考不可列印", "報告可供列印", "只能口頭告知客戶", "僅保存於雲端，門市無法取得"], a: 1 },
+  ]},
+  { name: "四、電池檢測與 E-XTEQ 操作", items: [
+    { q: "使用 E-XTEQ 生成電池檢測報告的流程中，需要等待約多久時間？", o: ["1 分鐘", "6 分鐘", "30 分鐘", "1 小時"], a: 1 },
+    { q: "輸入 BK-code 時，下列敘述何者正確？", o: ["大小寫不需要一致", "大小寫需吻合", "只能輸入數字", "系統會自動忽略 BK-code"], a: 1 },
+    { q: "BK-code 主要用來帶入什麼測試參數？", o: ["車輛保養里程", "不同車型／電瓶類型與容量等基準值", "引擎排氣量與馬力數值", "車輛出廠年份與里程數"], a: 1 },
+    { q: "如果車輛已更換「外場電瓶」（非原廠指定電瓶），下列處理方式何者正確？", o: ["BK-code 仍然適用，直接使用", "BK-code 不適用，須手動輸入電瓶規格", "無法進行電池檢測", "需更換回原廠電瓶才能檢測"], a: 1 },
+    { q: "電池檢測工具的使用優先順序，正確排序為？", o: ["Multimeter → Midtronics → E-XTEQ", "E-XTEQ → Midtronics → Multimeter", "Midtronics → E-XTEQ → Multimeter", "三者順序皆可隨意選用"], a: 1 },
+    { q: "12V 電池狀態檢查的「第二次診斷」，必須在什麼情況下才能執行？", o: ["客戶同意後", "電池已充飽電之後", "車輛行駛滿 10 公里後", "保養工單開立後"], a: 1 },
+  ]},
+  { name: "五、保養與維護模組", items: [
+    { q: "DiagBox 的「維護」標籤，下列何者不包含在其功能範圍？", o: ["保養複位", "電池充電狀態測試", "空調評估", "作動器測試"], a: 3 },
+    { q: "執行「空調評估檢查」時，下列何者會直接影響評估結果？", o: ["客戶等候時間長短", "車間溫度與濕度", "技師使用的診斷電腦品牌", "車輛目前的保養里程數"], a: 1 },
+  ]},
+  { name: "六、故障搜索與 ECU 選單標準結構", items: [
+    { q: "ECU 選單的 6 大標準結構，下列何者「不包含」在內？", o: ["Identification（識別）", "Fault Reading（故障讀取）", "Actuator Test（作動器測試）", "Download（下載）"], a: 3 },
+    { q: "「故障讀取」畫面中，若顯示「該車輛存在元件但配置文件不存在」，這代表什麼意思？", o: ["該元件功能完全正常", "元件存在，但系統缺少對應的配置資料", "客戶尚未付款", "該元件已被永久移除"], a: 1 },
+    { q: "故障碼依「層級 1 到 8」排序時，代表意義為何？", o: ["層級數字越大代表越優先處理", "層級 1 為優先，數字越大優先度越低", "層級與優先順序無關，僅供參考", "層級只反映故障發生的年份"], a: 1 },
+    { q: "當畫面顯示「未知控制單元（未識別）」提示時，正確處理方式為？", o: ["直接放棄診斷該 ECU", "在系統提供的列表中手動選擇正確的 ECU 型號", "更換整台診斷電腦", "聯絡客戶確認車輛保固狀態"], a: 1 },
+  ]},
+  { name: "七、作動器測試與錯誤代碼", items: [
+    { q: "作動器測試出現「Error 110」，代表什麼？", o: ["VCI 開啟失敗", "通訊被另一個操作／客戶端佔用", "電池電量不足", "網路斷線"], a: 1 },
+    { q: "作動器測試出現「Error 116／117」，建議優先確認什麼？", o: ["車輛烤漆狀況", "CAN 總線、ECU 供電或是否進入省電模式", "客戶聯絡電話", "保養里程數"], a: 1 },
+    { q: "作動器測試功能，下列敘述何者正確？", o: ["適用於所有 ECU", "僅在部分支援此功能的 ECU 中可用", "僅能在展示間模式下使用", "執行後會自動清除所有故障碼"], a: 1 },
+  ]},
+  { name: "八、配置／下載／維修包三大功能", items: [
+    { q: "「手動配置（Télécodage Manuel）」功能，下列敘述何者正確？", o: ["可隨時直接存取，不需任何前置條件", "必須在自動配置完成後才能存取", "所有 ECU 皆完全開放此功能", "僅適用於新車"], a: 1 },
+    { q: "畫面顯示「ECU updated」提示時，代表什麼？", o: ["ECU 已損壞需更換", "實體 ECU 軟體版本高於伺服器現有版本", "車輛已達保養里程", "客戶資料需要更新"], a: 1 },
+    { q: "下列何者「不屬於」DiagBox 三大核心子功能操作規範？", o: ["配置(Configuration)", "下載(Download)", "維修包(Repair Pack)", "手動配置(Télécodage Manuel)"], a: 3 },
+  ]},
+  { name: "九、JDD 分析（重點分類）", items: [
+    { q: "JDD 分析的第一步，通常需要匯入什麼類型的檔案？", o: ["PDF 報告檔", "DiagBox 產出的 CSV 檔", "圖片檔", "音訊檔"], a: 1 },
+    { q: "匯入 JDD 資料後，下列哪個操作步驟有助於鎖定特定時間範圍的故障資訊？", o: ["排序並輸入想確認的日期，篩選全部", "直接刪除所有資料重新匯入", "更改檔案副檔名", "隨機瀏覽全部欄位"], a: 0 },
+    { q: "分析 JDD 資料時，將不需要參考的欄位隱藏的主要目的是？", o: ["減少檔案大小", "讓分析畫面更聚焦、方便判讀", "避免客戶看到內部資料", "系統要求必須這麼做才能存檔"], a: 1 },
+    { q: "透過 JDD 資料，通常可以協助技師推斷出什麼？", o: ["客戶的付款方式", "進場前幾天車輛的實際運作情形", "車輛的原始出廠顏色", "保養套餐的價格"], a: 1 },
+    { q: "課程範例中，某車輛出現「副駕車門開關訊號異常」，最終透過 JDD 分析推斷出的故障主因是？", o: ["車門馬達故障", "車輛沒電（電瓶電壓下降）", "保險絲燒毀", "車門鎖具機構卡死"], a: 1 },
+    { q: "在該範例中，技師是利用哪兩項數據的對照關係，推算出故障發生的時間序？", o: ["時間與電壓", "里程與油耗", "溫度與濕度", "客戶通話紀錄與維修單編號"], a: 0 },
+  ]},
+];
+
+const satisfactionItems = ["課程內容安排是否清楚易懂", "教學步調是否適中", "教材（投影片／範例）是否有助於理解", "整體對本次課程的滿意度"];
+const confidenceItems = ["新車交付流程操作", "電池檢測（E-XTEQ／BK-code）", "保養與維護模組", "故障搜索與 ECU 選單操作", "作動器測試與錯誤代碼判讀", "JDD 分析"];
+
+// ---------- 建立測驗題目 ----------
+const flatQuestions = [];
+categories.forEach(cat => cat.items.forEach(it => flatQuestions.push(it)));
+const answers = new Array(flatQuestions.length).fill(null);
+
+const qContainer = document.getElementById("qContainer");
+let qIndex = 0;
+categories.forEach(cat => {
+  const catTitle = document.createElement("div");
+  catTitle.className = "cat-title";
+  catTitle.innerText = cat.name;
+  qContainer.appendChild(catTitle);
+
+  cat.items.forEach(item => {
+    const myIndex = qIndex;
+    const card = document.createElement("div");
+    card.className = "q-card";
+    const title = document.createElement("div");
+    title.className = "q-title";
+    title.innerHTML = `<span class="qno">${myIndex + 1}.</span>${item.q}`;
+    card.appendChild(title);
+
+    item.o.forEach((optText, oi) => {
+      const label = document.createElement("label");
+      label.className = "opt";
+      label.innerHTML = `<input type="radio" name="q${myIndex}" value="${oi}"> ${optText}`;
+      label.onclick = () => {
+        answers[myIndex] = oi;
+        card.querySelectorAll(".opt").forEach(el => el.classList.remove("selected"));
+        label.classList.add("selected");
+        updateProgress();
+      };
+      card.appendChild(label);
+    });
+    qContainer.appendChild(card);
+    qIndex++;
+  });
+});
+
+function updateProgress() {
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById("progressText").innerText = `測驗已作答 ${answered} / ${flatQuestions.length} 題`;
+}
+
+// ---------- 建立滿意度 Likert ----------
+const satAnswers = new Array(satisfactionItems.length).fill(null);
+const satContainer = document.getElementById("satContainer");
+satisfactionItems.forEach((label, i) => {
+  const card = document.createElement("div");
+  card.className = "likert-card";
+  const row = document.createElement("div");
+  row.className = "likert-row";
+  const labelDiv = document.createElement("div");
+  labelDiv.className = "likert-label";
+  labelDiv.innerText = label;
+  const scale = document.createElement("div");
+  scale.className = "likert-scale";
+  for (let s = 1; s <= 5; s++) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.innerText = s;
+    btn.onclick = () => {
+      satAnswers[i] = s;
+      scale.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    };
+    scale.appendChild(btn);
+  }
+  row.appendChild(labelDiv);
+  row.appendChild(scale);
+  card.appendChild(row);
+  const hint = document.createElement("div");
+  hint.className = "likert-hint";
+  hint.innerText = "1分＝非常不同意　5分＝非常同意";
+  card.appendChild(hint);
+  satContainer.appendChild(card);
+});
+
+// ---------- 建立信心自評 Likert（課前/課後兩欄） ----------
+const confBefore = new Array(confidenceItems.length).fill(null);
+const confAfter = new Array(confidenceItems.length).fill(null);
+const confContainer = document.getElementById("confContainer");
+
+function buildScale(arr, idx, container) {
+  const scale = document.createElement("div");
+  scale.className = "likert-scale";
+  for (let s = 1; s <= 5; s++) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.innerText = s;
+    btn.onclick = () => {
+      arr[idx] = s;
+      scale.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    };
+    scale.appendChild(btn);
+  }
+  container.appendChild(scale);
+}
+
+confidenceItems.forEach((label, i) => {
+  const card = document.createElement("div");
+  card.className = "likert-card";
+  card.innerHTML = `<div class="likert-label" style="margin-bottom:8px;">${label}</div>`;
+  const cols = document.createElement("div");
+  cols.className = "confidence-cols";
+
+  const beforeCol = document.createElement("div");
+  beforeCol.className = "confidence-col";
+  beforeCol.innerHTML = '<div class="tag">課前信心</div>';
+  buildScale(confBefore, i, beforeCol);
+
+  const afterCol = document.createElement("div");
+  afterCol.className = "confidence-col";
+  afterCol.innerHTML = '<div class="tag">課後信心</div>';
+  buildScale(confAfter, i, afterCol);
+
+  cols.appendChild(beforeCol);
+  cols.appendChild(afterCol);
+  card.appendChild(cols);
+  confContainer.appendChild(card);
+});
+
+// ---------- 送出 ----------
+function submitAll() {
+  const dealer = document.getElementById("dealer").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const warnEl = document.getElementById("warnMsg");
+  const answeredQ = answers.filter(a => a !== null).length;
+  const answeredSat = satAnswers.filter(a => a !== null).length;
+
+  if (!dealer || !name || answeredQ < flatQuestions.length || answeredSat < satisfactionItems.length) {
+    warnEl.style.display = "block";
+    warnEl.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+  warnEl.style.display = "none";
+
+  // 測驗計分與作答明細
+  let correct = 0;
+  const qlogs = [];
+  flatQuestions.forEach((item, qi) => {
+    const isCorrect = answers[qi] === item.a;
+    if (isCorrect) correct++;
+    qlogs.push(`Q${qi + 1}:[${isCorrect ? "對" : "錯"}] 選:${item.o[answers[qi]]}${isCorrect ? "" : " / 正解:" + item.o[item.a]}`);
+  });
+  const scoreText = `${correct}/${flatQuestions.length}`;
+
+  // 滿意度與信心自評明細
+  const surveyParts = [];
+  satisfactionItems.forEach((label, i) => surveyParts.push(`【滿意度】${label}:${satAnswers[i]}分`));
+  confidenceItems.forEach((label, i) => surveyParts.push(`【信心-課前】${label}:${confBefore[i] ?? "未填"}分`));
+  confidenceItems.forEach((label, i) => surveyParts.push(`【信心-課後】${label}:${confAfter[i] ?? "未填"}分`));
+  const surveyText = surveyParts.join(" | ");
+
+  const params = {
+    [ENTRY.dealer]: dealer,
+    [ENTRY.name]: name,
+    [ENTRY.score]: scoreText,
+    [ENTRY.qlog]: qlogs.join(" | "),
+    [ENTRY.survey]: surveyText,
+    [ENTRY.open1]: document.getElementById("open1").value.trim(),
+    [ENTRY.open2]: document.getElementById("open2").value.trim(),
+    [ENTRY.open3]: document.getElementById("open3").value.trim(),
+  };
+
+  sendToGoogleForm(params);
+}
+
+function sendToGoogleForm(params) {
+  const iframeName = "hidden_iframe_" + Date.now();
+  const iframe = document.createElement("iframe");
+  iframe.name = iframeName;
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = FORM_URL;
+  form.target = iframeName;
+  form.style.display = "none";
+
+  Object.entries(params).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+
+  document.getElementById("quizScreen").style.display = "none";
+  document.getElementById("resultScreen").style.display = "block";
+}
+</script>
+</body>
+</html>
